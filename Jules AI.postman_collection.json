@@ -1,0 +1,203 @@
+{
+	"info": {
+		"_postman_id": "bbab83bd-5b99-43f2-af8a-dc3c49eb1429",
+		"name": "Jules AI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33197435"
+	},
+	"item": [
+		{
+			"name": "Graphql",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Set up login credentials dynamically or statically at the collection level\r",
+							"pm.collectionVariables.set('email', 'qa@julesai.com');  // Example username\r",
+							"pm.collectionVariables.set('password', 'QaJULES2023!'); // Example password\r",
+							"\r",
+							"// Set invalid email and password for failure/error scenarios\r",
+							"pm.collectionVariables.set('invalidEmail', 'invaliduser@example.com');\r",
+							"pm.collectionVariables.set('invalidPassword', 'wrongPassword');\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"// Function to send GraphQL request for login\r",
+							"function sendLoginRequest(email, password) {\r",
+							"    const graphqlRequest = {\r",
+							"        url: 'https://demo.api.julesai.com/graphql',\r",
+							"        method: 'POST',\r",
+							"        headers: {\r",
+							"            'Content-Type': 'application/json'\r",
+							"        },\r",
+							"        body: {\r",
+							"            mode: 'raw',\r",
+							"            raw: JSON.stringify({\r",
+							"                query: `\r",
+							"                    mutation Login($email: String!, $password: String!) {\r",
+							"                        login(email: $email, password: $password) {\r",
+							"                            token\r",
+							"                            defaultPage\r",
+							"                            shouldUseAwsServer\r",
+							"                        }\r",
+							"                    }\r",
+							"                `,\r",
+							"                variables: {\r",
+							"                    email: email,\r",
+							"                    password: password\r",
+							"                }\r",
+							"            })\r",
+							"        }\r",
+							"    };\r",
+							"\r",
+							"\r",
+							"pm.sendRequest(graphqlRequest, function (err, res) {\r",
+							"        const response = res.json();\r",
+							"\r",
+							"        // Valid login test\r",
+							"            pm.test(\"Valid Login Success\", function () {\r",
+							"                 if (res.status === 200) {\r",
+							"                pm.expect(response.data.login.token).to.not.be.null;\r",
+							"                pm.expect(response.data.login.defaultPage).to.not.be.null;\r",
+							"                pm.expect(response.data.login.shouldUseAwsServer).to.not.be.null;\r",
+							"                pm.environment.set(\"auth_token\", response.data.login.token);\r",
+							"                pm.environment.set(\"defaultPage\", response.data.login.defaultPage);\r",
+							"                pm.environment.set(\"shouldUseAwsServer\", response.data.login.shouldUseAwsServer);\r",
+							"                 }\r",
+							"            });\r",
+							"\r",
+							"        // Invalid login test\r",
+							"       \r",
+							"            pm.test(\"Invalid Login Failure\", function () {\r",
+							"                 if (res.status === 401) {\r",
+							"               pm.expect(response.errors).to.not.be.null;\r",
+							"                pm.expect(response.errors[0].message).to.include(\"NOT_AUTHENTICATED\");\r",
+							"                 }\r",
+							"            });\r",
+							"\r",
+							"        // Additional error handling tests\r",
+							"        pm.test(\"Error Handling - Unauthorized (401)\", function () {\r",
+							"            if (res.status === 401) {\r",
+							"                pm.expect(response.errors).to.not.be.null;\r",
+							"                pm.expect(response.errors[0].message).to.include(\"Unauthorized\");\r",
+							"            }\r",
+							"        });\r",
+							"\r",
+							"        pm.test(\"Error Handling - Internal Server Error (500)\", function () {\r",
+							"            if (res.status === 500) {\r",
+							"                pm.expect(response.errors).to.not.be.null;\r",
+							"                pm.expect(response.errors[0].message).to.include(\"Internal server error\");\r",
+							"            }\r",
+							"        });\r",
+							"    });\r",
+							"}\r",
+							"\r",
+							"// Test valid credentials (expecting 200 success)\r",
+							"sendLoginRequest(pm.environment.get(\"email\"), pm.environment.get(\"password\"), 200);\r",
+							"\r",
+							"// Test invalid credentials (expecting 401 failure)\r",
+							"sendLoginRequest(pm.environment.get(\"invalidEmail\"), pm.environment.get(\"invalidPassword\"), 401);\r",
+							"\r",
+							"// Test bad request (expecting 400 failure)\r",
+							"sendLoginRequest(pm.environment.get(\"invalidEmail\"), pm.environment.get(\"invalidPassword\"), 400);\r",
+							"\r",
+							"// Test internal server error (expecting 500 failure)\r",
+							"sendLoginRequest(pm.environment.get(\"email\"), pm.environment.get(\"password\"), 500);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "",
+						"value": "",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "mutation Login($email: String!, $password: String!) {\r\n  login(email: $email, password: $password) {\r\n    token\r\n    defaultPage\r\n    shouldUseAwsServer\r\n  }\r\n}\r\n",
+						"variables": "{\r\n   \"email\": \"{{email}}\",\r\n    \"password\": \"{{password}}\"\r\n  }"
+					}
+				},
+				"url": {
+					"raw": "https://demo.api.julesai.com/graphql",
+					"protocol": "https",
+					"host": [
+						"demo",
+						"api",
+						"julesai",
+						"com"
+					],
+					"path": [
+						"graphql"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "email",
+			"value": ""
+		},
+		{
+			"key": "password",
+			"value": ""
+		},
+		{
+			"key": "invalidEmail",
+			"value": ""
+		},
+		{
+			"key": "invalidPassword",
+			"value": ""
+		}
+	]
+}
